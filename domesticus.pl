@@ -25,8 +25,7 @@ my $file         = shift;
 my $input_object = Bio::SeqIO->new(-file => $file);
 my $input_seq= $input_object->next_seq;
 
-my $locatable_seq =  Bio::LocatableSeq->new(-seq => $input_seq->seq,
-                    -id  => "seq1");
+my $locatable_seq =  Bio::LocatableSeq->new(-seq => $input_seq->seq);
 
 #SANITY CHECK (SILENT FOR TRANSLATABLE SEQUENCE WITH NO STOPS OTHER THAN END)
 my $input_prot= $locatable_seq->translate;
@@ -39,21 +38,122 @@ my $custom_collection=pull_enzymes(\@enzymes);
 my $ra = Bio::Restriction::Analysis->new(-seq=>$locatable_seq, -enzymes=>$custom_collection);
 $ra->multiple_digest($custom_collection);
 
-#DEFINE A HASH FOR STORING CUT SITE INFO
-my %cut_hash=find_cuts(\@enzymes,\$ra);
+#CREATE GENERIC OBJECTS
+my @seqobjects=generate_objects(\@enzymes,\$ra, \$locatable_seq);
+
+
+
+#GENERATE THE INFO ABOUT STRAND AND RECOGNITION SITE
+
+recognition_sites(\@seqobjects, \$custom_collection);
+
+
+#ONCE ALL COORDINATES IN CHECK CODONS
 
 my $sc=11;
 my $ec=32;
 
-
 #CONVERT COORDINATES
-my @coord=coord_convert(\$locatable_seq,\$input_prot,\$sc,\$ec);
-print "Converted coordinates ";
-print join "\t", @coord;
-print "\n";
+#my @coord=coord_convert(\$locatable_seq,\$input_prot,\$sc,\$ec);
+#print "Converted coordinates ";
+#print join "\t", @coord;
+#print "\n";
 
 
-####SUBROUTINES
+
+
+
+
+
+
+#############SUBROUTINES##################
+
+######RECOGNITION SITES#########
+sub recognition_sites{
+my ($seqobjects, $custom_collection)=@_;
+
+foreach (@$seqobjects){
+	#print $_->source_tag."\t";
+	my $tag=$_->source_tag;
+	print $tag."\n";
+	#print $_->primary_tag."\t";
+	my @one= $_->get_tag_values('one');
+	my @two= $_->get_tag_values('two');
+	#print join "\t", @one;
+	#print "\t";
+	#print join "\t", @two;
+	#print "\t";
+	#print $_->entire_seq()->seq;
+	#print "\n";
+	
+	my $f_left=$one[0]-12;
+	my $f_right=$two[0]+12;
+	print $f_left."\t".$f_right."\n";
+	my $enzyme= $$custom_collection->get_enzyme($tag);
+	my $recog= $enzyme->recog();
+	my $revcom_recog= $enzyme->revcom_recog();
+	my $subseq=$_->entire_seq()->subseq($f_left,$f_right);
+	print $subseq."\n";
+	print "Searching for ".$recog. " and ".$revcom_recog."\n";
+	
+	if ($subseq=~ /$recog/){
+                print "Forward found index location: $-[0]-$+[0]\n";
+        }
+         elsif ($subseq=~ /$revcom_recog/){
+                print "Revcom found index location: $-[0]-$+[0]\n";
+        }
+         else {
+                print "came in else\n";
+        }
+	
+	}
+
+
+}
+
+
+
+####GENERATE SEQ OBJECTS######
+
+sub generate_objects{
+my ($enz,$ra,$loc)=@_;
+#CUTTING HASH
+
+my %cut_hash=find_cuts(\@$enz,\$$ra);
+my @seqobjects=();
+
+	foreach(keys %cut_hash){
+		my $enz=$_;
+		my $end =scalar @{($cut_hash{$_})}."\n";
+		my @values=@{($cut_hash{$_})};
+		
+			for (my $i=0;$i<$end;$i=$i+2){
+			
+			#print "HERE ".$values[$i]."\n";
+			#print "HERE ".$values[$i+1]."\n";
+			
+			
+				my $feat = Bio::SeqFeature::Generic->new( 
+ 		 	           -primary      => 'restriction', # -primary_tag is a synonym
+ 		   	           -source_tag   => $enz,
+ 		     	       -display_name => '',
+ 		  	  	       -score        => 0,
+        			   -tag          => { 'one' => $values[$i],
+          			                      'two' => $values[$i+1] } );
+          			$feat->attach_seq($$loc);                      
+          			#print $$loc->seq;
+          			 
+				push (@seqobjects,$feat);
+		}
+}
+
+
+return (@seqobjects);
+
+}
+
+
+############# ENZYMES FROM REBASE########
 
 sub pull_enzymes{
 my ($enzymes)=@_;
@@ -78,6 +178,7 @@ return $custom_collection;
 
 }
 
+############CUTS#############
 sub find_cuts{
 my ($enzymes,$ra)=@_;
 
@@ -97,9 +198,9 @@ foreach (@$enzymes){
 
 
 #PRINT OUT SUMMARY OF DATA IN THE HASH
-foreach (keys %cut_hash){
+foreach (keys %hash){
 	#print "STORED CUTS BY $_ ";
-	my @cuts=@{$cut_hash{$_}};
+	my @cuts=@{$hash{$_}};
 	#print join "\t", @cuts;
 	#print "\n";
 }
@@ -107,8 +208,11 @@ return %hash
 }
 
 
-sub coord_convert{
-my ($locatable_seq,$input_prot,$map_start,$map_end)=@_;
+
+
+######CONVERT COORDINATES DNA TO PROT##########
+#sub coord_convert{
+#my ($locatable_seq,$input_prot,$map_start,$map_end)=@_;
 
 ####SEQUENCE COORDINATE CONVERSION FROM DNA TO PROTEIN
 
@@ -125,31 +229,31 @@ my ($locatable_seq,$input_prot,$map_start,$map_end)=@_;
 
 #COORDINATE MAPPING
 
-my $input_coordinates = Bio::Location::Simple->new  
-  (-seq_id => 'cds', -start => $$locatable_seq->start(), -end => $$locatable_seq->end(), -strand=>1 );
-my   $output_coordinates = Bio::Location::Simple->new  
-	(-seq_id => 'pep', -start => $$input_prot->start(), -end => $$input_prot->end(), -strand=>1 );
-my  $pair = Bio::Coordinate::Pair->new
-  (-in => $input_coordinates ,  -out => $output_coordinates);
-my  $pos = Bio::Location::Simple->new (-start => $$map_start, -end => $$map_end );
+#my $input_coordinates = Bio::Location::Simple->new  
+#  (-seq_id => 'cds', -start => $$locatable_seq->start(), -end => $$locatable_seq->end(), -strand=>1 );
+#my   $output_coordinates = Bio::Location::Simple->new  
+#	(-seq_id => 'pep', -start => $$input_prot->start(), -end => $$input_prot->end(), -strand=>1 );
+#my  $pair = Bio::Coordinate::Pair->new
+#  (-in => $input_coordinates ,  -out => $output_coordinates);
+#my  $pos = Bio::Location::Simple->new (-start => $$map_start, -end => $$map_end );
 
 # create a gene mapper and set it to map from chromosomal to cds coordinates
 
-my $gene = Bio::Coordinate::GeneMapper->new(-in   =>'cds',
-                                      -out  =>'peptide',
-                                      -cds  =>$$locatable_seq,
-                                     );
+#my $gene = Bio::Coordinate::GeneMapper->new(-in   =>'cds',
+#                                      -out  =>'peptide',
+#                                      -cds  =>$$locatable_seq,
+#                                     );
                                      
-my $newloc = $gene->map($pos);
-my $con_start = $newloc->start;
-my $con_end = $newloc->end;
+#my $newloc = $gene->map($pos);
+#my $con_start = $newloc->start;
+#my $con_end = $newloc->end;
 
 #print "MAP\t";
 #print $con_start."\t";
 #print $con_end."\n";
-return ($con_start,$con_end);
+#return ($con_start,$con_end);
 
-}
+#}
 
 exit;
 
