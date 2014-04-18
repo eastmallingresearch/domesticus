@@ -1,0 +1,82 @@
+Decide on part location (this will determine whether to worry about inframe changes)
+
+If coding- check if there are site and what frame they are in.
+
+Look for synonymous changes etc
+
+When a point mutation has been decided upon this defines (around a couple of bp window) 
+the 3' end of the primer (before the 10bp overhang has been added (how are these decided- 
+I suspect they can be anything but the ones needed for the actual construct to go into
+the vector)
+
+Design the primers 4 for each mutation 1F 1R 2F 2R
+
+
+#GOLDENBRAID 
+
+#FORWARDS PRIMER (not end- internal primers)
+GCGC-CGTCTC-NN
+#GENERAL MODEL
+5'(4-BP-OVERHANG-BsmBI-NN-SITE-PRIMER)3'
+
+BbsI	GAAGAC(2/6)	6.0	5' (4 nucleotides)	1 per match
+BsaI	GGTCTC(1/5)	6.0	5' (4 nucleotides)	1 per match
+BsmBI	CGTCTC(1/5)	6.0	5' (4 nucleotides)	1 per match
+
+GCGC-CGTCT-CG
+GCGC-CGTCTC-GT
+#END OF CONSTRUCT
+GCGCCGTCTCGCTCGGGAG
+
+#GOLDENGATE
+
+PRINCIPLE IS THE SAME (?), MUTAGENISING THE SITE WITH A PAIR OF PRIMERS, HOWEVER THY PLACE 
+THE MUTATION RIGHT AT THE 5 PRIME OF THE PRIMER
+
+####
+Strategy for removing internal type IIS recognition sequences. Removal of a BsaI site in 
+a fragment of interest is done by amplifying two fragments with primers pr1 and 2 and 
+primers pr3 and 4. Primers pr2 and pr3 span the BsaI recognition site and introduce a 
+single nucleotide mismatch (indicated by an arrow). As all primers have BpiI recognition 
+sites in their 5' extensions, the PCR fragments are cloned with a BpiI-based Golden Gate
+cloning reaction in the appropriate level 0 destination vector.
+#####
+
+Forwards (external)-pr1
+T-Bbs1-nn-1234-primer
+
+Reverse (external)-pr4
+T-Bbs1-nn-5678-followed-by-primer(rc)
+
+##where 1234 and 5678 are the pertinent overhangs for the module
+
+Forwards (internal)-pr3
+T-Bbs1-nn-mutation-primer
+
+Reverse (internal)-pr2
+T-Bbs1-nn-reverse-complement-with-mutation-followed-by-primer
+
+
+
+
+
+
+#GOLDENBRAID
+Once you have all your patches the domestication reaction should be performed as follows:
+40 ng of each patch
+75 ng of pUPD
+5-10u BsmBI
+3u T4 Ligase
+1 microlitre Ligase Buffer
+
+Final volume: 10 microlitres
+
+We use Promega T4 DNA ligase(M180B) and fermentas BsmBI/Esp3I (ER0451). 
+We haven't tried other enzymes suppliers but they will problably work as well.
+
+
+Set your reaction in a thermocycler: 25 cycles x (37C 2', 16C 5').
+One microlitre of the reaction is enough to be transform E.coli 
+electrocompetent cells. Positive clones are selected in Ampicillin (50 microgram ml-1),
+ IPTG (0.5mM) and Xgal (40 microgram ml-1) plates. You will distinguish between colonies 
+ carrying intact vectors (blue) and those transformed with your construction (white).
