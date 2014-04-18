@@ -28,11 +28,35 @@ my $input_seq= $input_object->next_seq;
 my $locatable_seq =  Bio::LocatableSeq->new(-seq => $input_seq->seq,
                     -id  => "seq1");
 
-
 #SANITY CHECK (SILENT FOR TRANSLATABLE SEQUENCE WITH NO STOPS OTHER THAN END)
 my $input_prot= $locatable_seq->translate;
 #print $input_prot->seq,"\n";
 
+#GET ENZYMES FROM REBASE FILE
+my $custom_collection=pull_enzymes(\@enzymes);
+
+#DEFINE A RESTRICTION ANALYSIS OBJECT
+my $ra = Bio::Restriction::Analysis->new(-seq=>$locatable_seq, -enzymes=>$custom_collection);
+$ra->multiple_digest($custom_collection);
+
+#DEFINE A HASH FOR STORING CUT SITE INFO
+my %cut_hash=find_cuts(\@enzymes,\$ra);
+
+my $sc=11;
+my $ec=32;
+
+
+#CONVERT COORDINATES
+my @coord=coord_convert(\$locatable_seq,\$input_prot,\$sc,\$ec);
+print "Converted coordinates ";
+print join "\t", @coord;
+print "\n";
+
+
+####SUBROUTINES
+
+sub pull_enzymes{
+my ($enzymes)=@_;
 
 #GET A DATABASE OF RESTRICTION SITES
 my $rebase = Bio::Restriction::IO->new(
@@ -44,85 +68,88 @@ my $rebase_collection = $rebase->read();
 my $custom_collection = Bio::Restriction::EnzymeCollection->new(-empty => 1);
 
 #PUSH INTO CUSTOM COLLECTION FROM REBASE
-foreach (@enzymes){
+foreach (@$enzymes){
 	#print "Retreving ". $_."\n";
 	my $re=$rebase_collection->get_enzyme($_);
 	#print $re->name();
 	$custom_collection->enzymes($re);
 }
+return $custom_collection;
 
-#DEFINE A RESTRICTION ANALYSIS OBJECT
-my $ra = Bio::Restriction::Analysis->new(-seq=>$locatable_seq, -enzymes=>$custom_collection);
+}
 
-#ANALYSIS
-$ra->multiple_digest($custom_collection);
+sub find_cuts{
+my ($enzymes,$ra)=@_;
 
-#DEFINE A HASH FOR STORING CUT SITE INFO
-my %cut_hash=();
+my %hash=();
 
 #LOOP AROUND THE ENZYMES AND PRINT OUT CUT STATS
-foreach (@enzymes){
+foreach (@$enzymes){
 	print "CUTS BY $_ ";
-	my $cut= $ra->cuts_by_enzyme($_);
+	my $cut= $$ra->cuts_by_enzyme($_);
 	print ($cut/2,"\n");
 	#IF THERE IS A CUT THEN ADD TO A HASH
 		if ($cut/2 >0){
-			my @cuts=$ra->positions($_);
-			$cut_hash{$_}=\@cuts;
+			my @cuts=$$ra->positions($_);
+			$hash{$_}=\@cuts;
 		}
 }
 
 
 #PRINT OUT SUMMARY OF DATA IN THE HASH
 foreach (keys %cut_hash){
-	print "STORED CUTS BY $_ ";
+	#print "STORED CUTS BY $_ ";
 	my @cuts=@{$cut_hash{$_}};
-	print join "\t", @cuts;
-	print "\n";
+	#print join "\t", @cuts;
+	#print "\n";
+}
+return %hash
 }
 
 
-####SEQUENCE COORDINATE CONVERSION
+sub coord_convert{
+my ($locatable_seq,$input_prot,$map_start,$map_end)=@_;
 
-print "SEQUENCE COORDINATES \n\n";
-print "GENE \t";
-print $locatable_seq->start()."\t";
-print $locatable_seq->end()."\n";
-print "PROT \t";
-print $input_prot->start()."\t";
-print $input_prot->end()."\n";
+####SEQUENCE COORDINATE CONVERSION FROM DNA TO PROTEIN
 
-my $map_start='11';
-my $map_end='32';
-
-print "GENEMAP\t";
-print $map_start."\t";
-print $map_end."\n";
+#print "SEQUENCE COORDINATES \n\n";
+#print "GENE \t";
+#print $$locatable_seq->start()."\t";
+#print $$locatable_seq->end()."\n";
+#print "PROT \t";
+#print $$input_prot->start()."\t";
+#print $$input_prot->end()."\n";
+#print "GENEMAP\t";
+#print $$map_start."\t";
+#print $$map_end."\n";
 
 #COORDINATE MAPPING
 
 my $input_coordinates = Bio::Location::Simple->new  
-  (-seq_id => 'cds', -start => $locatable_seq->start(), -end => $locatable_seq->end(), -strand=>1 );
+  (-seq_id => 'cds', -start => $$locatable_seq->start(), -end => $$locatable_seq->end(), -strand=>1 );
 my   $output_coordinates = Bio::Location::Simple->new  
-	(-seq_id => 'pep', -start => $input_prot->start(), -end => $input_prot->end(), -strand=>1 );
+	(-seq_id => 'pep', -start => $$input_prot->start(), -end => $$input_prot->end(), -strand=>1 );
 my  $pair = Bio::Coordinate::Pair->new
   (-in => $input_coordinates ,  -out => $output_coordinates);
-my  $pos = Bio::Location::Simple->new (-start => $map_start, -end => $map_end );
+my  $pos = Bio::Location::Simple->new (-start => $$map_start, -end => $$map_end );
 
 # create a gene mapper and set it to map from chromosomal to cds coordinates
 
 my $gene = Bio::Coordinate::GeneMapper->new(-in   =>'cds',
                                       -out  =>'peptide',
-                                      -cds  =>$locatable_seq,
+                                      -cds  =>$$locatable_seq,
                                      );
                                      
 my $newloc = $gene->map($pos);
 my $con_start = $newloc->start;
 my $con_end = $newloc->end;
 
-print "MAP\t";
-print $con_start."\t";
-print $con_end."\n";
+#print "MAP\t";
+#print $con_start."\t";
+#print $con_end."\n";
+return ($con_start,$con_end);
+
+}
 
 exit;
 
