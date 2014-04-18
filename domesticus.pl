@@ -53,47 +53,56 @@ my $locatable_seq =  Bio::LocatableSeq->new(-seq => $input_seq->seq,
 my $input_prot= $locatable_seq->translate;
 #print $input_prot->seq,"\n";
 
+
+#GET A DATABASE OF RESTRICTION SITES
+
 my $rebase = Bio::Restriction::IO->new(
       -file   => 'withrefm.404',
       -format => 'withrefm' );
   my $rebase_collection = $rebase->read();
 
+#DEFINE A CUSTOM COLLECTION OF RESTRICTION SITES (TO BE A PARAMETER OR FILE)
+my @enzymes=('BbsI','BsmBI','BsaI');
 my $custom_collection = Bio::Restriction::EnzymeCollection->new(-empty => 1);
-my $re=Bio::Restriction::Enzyme->new
-      (-enzyme=>'BbsI', -seq=>'GAAGAC'); 
-$custom_collection->enzymes($re);
-      
-        
-#my $all_collection = Bio::Restriction::EnzymeCollection->new();
-#my $BbsI_enzyme = $custom_collection->get_enzyme('BbsI');
-my $BbsI_enzyme = $rebase_collection->get_enzyme('BbsI');
 
-my $ra = Bio::Restriction::Analysis->new(-seq=>$locatable_seq, -enzymes=>$BbsI_enzyme);
-print "BBS 1 cuts ".$BbsI_enzyme->cut."\n";
-print "Recognition site ". $BbsI_enzyme->string."\n";
-print "Overhang ".$BbsI_enzyme->overhang."\n";
-#my $cbe = $ra->cuts_by_enzyme($BbsI_enzyme);
+#PUSH INTO CUSTOM COLLECTION
 
-#print "CUTS BY ENZYME $cbe\n";
+foreach (@enzymes){
+	print "Retreving ". $_."\n";
+	my $re=$rebase_collection->get_enzyme($_);
+	#print $re->name();
+	$custom_collection->enzymes($re);
 
-my @fragments = $ra->fragments($BbsI_enzyme);
-	foreach(@fragments){
-		print $_."\n";
-	}
-print "POSITIONS \n";
+}
 
-my @positions = $ra->positions('BbsI');
-	foreach(@positions){
-		print $_."\n";
-	}
-print "FRAGMENTS\n";
-print "EcoRI fragment lengths: ", join(' & ', map {length $_} @fragments), "\n";
+#DEFINE A RESTRICTION ANALYSIS OBJECT
+my $ra = Bio::Restriction::Analysis->new(-seq=>$locatable_seq, -enzymes=>$custom_collection);
+
+#ANALYSIS
+$ra->multiple_digest($custom_collection);
+
+foreach (@enzymes){
+	print "CUTS BY $_ ";
+	my $cut= $ra->cuts_by_enzyme($_);
+	print $cut/2;
+	print "\n";
+
+	print "Cut positions for $_ \n";
+	my @cuts=$ra->positions($_);
+	print join "\t", @cuts;
+	print "\n";
+
+}
 
 
-print "VIRTUAL GEL OF FRAGMENTS " ;
+exit;
+
+
+
+print "VIRTUAL GEL OF FRAGMENTS \n" ;
 
 my @gel;
-  my @bam_maps = $ra->fragment_maps('BbsI');
+  my @bam_maps = $ra->fragment_maps('multiple_digest');
   foreach my $i (@bam_maps) {
      my $start = $i->{start};
      my $end = $i->{end};
@@ -103,4 +112,24 @@ my @gel;
   }
   print join("\n", @gel) . "\n";
   
+  print "POSITIONS OF DIGESTIONS \n";
+  
+my @positions = $ra->positions('multiple_digest');
+	foreach(@positions){
+		print $_."\n";
+	}
+print "FRAGMENTS CREATED FROM DIGESTIONS\n";
+
+my @fragments = $ra->fragments('multiple_digest');
+	foreach(@fragments){
+		print $_."\n";
+	};
+
+
+print "Multiple digest fragment lengths: ", join(' & ', map {length $_} @fragments), "\n";
+
+  
+
+
+
   
