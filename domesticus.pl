@@ -69,7 +69,6 @@ my %primers=design_primer(\@seqobjects,\$locatable_seq);
 
 sub design_primer{
 	my ($seqobj,$seq)=@_;
-	  use Bio::Tools::Run::Primer3;
 	  use Bio::SeqIO;
 	
 	 my %results=();
@@ -108,6 +107,7 @@ sub design_primer{
 	
 	my $mutagenised_seq=mutagenise_seq(\$$seq,\@array_of_positions);
 	
+	#print $mutagenised_seq;
 	
 	print "PRIMER ARRAY \n";
 	for (my $i=0; $i<$pairs;$i++){
@@ -122,16 +122,13 @@ sub design_primer{
 			print $fw."\t";
 			print $rv."\n";
 			
-			my $primer3 = Bio::Tools::Run::Primer3->new(-seq => $$seq,
-		                                      -outfile => "temp.out",
-			                                #-path => "/home/harrir/prog/primer3-1.1.3/");
-		                                     -path => "/home/harrir/prog/primer3-2.3.6/"); 
-			$primer3->add_targets('PRIMER_SEQUENCE_ID'=>"test",
-			'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
-			'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
-			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
-			 my $results = $primer3->run;
-			print "There were ", $results->number_of_results, " primers\n";
+			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
+			
+			
+			
+			
+			
+			
 		}
 		
 		if ($i==($pairs-1)){
@@ -140,6 +137,8 @@ sub design_primer{
 			my $rv=($primer_r[3]);
 			print $fw."\t";
 			print $rv."\n";
+			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
+			
 		}
 		
 		if ($i>0 && $i<scalar(@$seqobj)){
@@ -147,6 +146,8 @@ sub design_primer{
 			my $rv=($primer_r[3]+1);
 			print $fw."\t";
 			print $rv."\n";
+			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
+			
 			
 		}
 	}
@@ -158,6 +159,36 @@ sub design_primer{
 
 
 ###EDIT SEQ TO CONTAIN ABOLISHED RESTRICTION SITES
+
+sub primer_design{
+my($fw,$rv,$seq)=@_;
+
+my @primers=();
+
+ use Bio::Tools::Run::Primer3;	 
+			my $primer3 = Bio::Tools::Run::Primer3->new(-seq => $$seq,
+		                                      -outfile => "temp.out",
+			                                #-path => "/home/harrir/prog/primer3-1.1.3/");
+		                                     -path => "/home/harrir/prog/primer3-2.3.6/"); 
+			$primer3->add_targets('PRIMER_SEQUENCE_ID'=>"test",
+			'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
+			'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
+			'PRIMER_MAX_DIFF_TM' =>"3",
+			'PRIMER_MAX_SIZE'=> "35",
+			'PRIMER_PICK_ANYWAY'=>"1",
+			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
+			 my $results = $primer3->run;
+			print "There were ", $results->number_of_results, " primers\n";
+			my $all_results = $results->all_results;
+			my %results=%{$all_results};
+	 				foreach my $key (keys %{$all_results}) {
+    					#print "$key\t${$all_results}{$key}\n";
+    					#print $key."\n";
+ 					}
+ 					print $results{'PRIMER_LEFT_0_SEQUENCE'}."\n";
+ 					print $results{'PRIMER_RIGHT_0_SEQUENCE'}."\n";
+ 	return @primers;
+}
 
 sub mutagenise_seq{
 my ($seq,$aop)=@_;
