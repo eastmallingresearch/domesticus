@@ -19,7 +19,12 @@ use Bio::Coordinate::GeneMapper;
 
 #DEFINE THE RESTRICTION SITES
 my @enzymes=('BbsI','BsmBI','BsaI');
-
+my %tails = (
+        left_outer  => "tgaagacnnAAAA",
+        left_inner   => "tgaagacnn",
+        right_inner => "tgaagacnn",
+        right_outer => "tgaagacnnTTTT"
+    );
 #READ IN THE DNA SEQUENCE
 my $file         = shift; 
 my $input_object = Bio::SeqIO->new(-file => $file);
@@ -59,7 +64,7 @@ print "\nMUTAGENESIS SUCCESSFUL- HAVE IDENTIFIED LESIONS \n";
 
 print "\nDESIGNING PRIMER SETS \n";
 
-my %primers=design_primer(\@seqobjects,\$locatable_seq);
+my %primers=design_primer(\@seqobjects,\$locatable_seq,\%tails);
 	
 
 
@@ -68,7 +73,7 @@ my %primers=design_primer(\@seqobjects,\$locatable_seq);
 ######DESIGN PRIMERS########NOTE I HAD TO INSTALL CLONE FROM CPAN TO MAKE THIS WORK
 
 sub design_primer{
-	my ($seqobj,$seq)=@_;
+	my ($seqobj,$seq,$tails)=@_;
 	  use Bio::SeqIO;
 	
 	 my %results=();
@@ -121,14 +126,8 @@ sub design_primer{
 			my $rv=($primer_r[3])+1;
 			print $fw."\t";
 			print $rv."\n";
-			
 			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
-			
-			
-			
-			
-			
-			
+			append_primers(\@primers,\'start', \%$tails);
 		}
 		
 		if ($i==($pairs-1)){
@@ -138,7 +137,7 @@ sub design_primer{
 			print $fw."\t";
 			print $rv."\n";
 			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
-			
+			append_primers(\@primers,\'end', \%$tails);
 		}
 		
 		if ($i>0 && $i<scalar(@$seqobj)){
@@ -147,8 +146,7 @@ sub design_primer{
 			print $fw."\t";
 			print $rv."\n";
 			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
-			
-			
+			append_primers(\@primers,\'internal', \%$tails);
 		}
 	}
 	
@@ -157,6 +155,37 @@ sub design_primer{
 	
 }
 
+
+######APPEND THE TAILS########
+sub append_primers{
+my($primers,$flag,$tails)=@_;
+
+my %hash=%{$tails};
+
+if ($$flag eq 'start'){
+	print "PRIMERS $$flag \n";
+	my $fwd=$hash{'left_outer'};
+	my $rev=$hash{'right_inner'};
+	print $fwd.$$primers[0]."\n";
+	print $rev.$$primers[1]."\n";
+	
+}
+elsif($$flag eq 'end'){
+	print "PRIMERS $$flag \n";
+	my $fwd=$hash{'left_inner'};
+	my $rev=$hash{'right_outer'};
+	print $fwd.$$primers[0]."\n";
+	print $rev.$$primers[1]."\n";
+}
+elsif($$flag eq 'internal'){
+	print "PRIMERS $$flag \n";
+	my $fwd=$hash{'left_inner'};
+	my $rev=$hash{'right_inner'};
+	print $fwd.$$primers[0]."\n";
+	print $rev.$$primers[1]."\n";
+}
+
+}
 
 ###EDIT SEQ TO CONTAIN ABOLISHED RESTRICTION SITES
 
@@ -185,8 +214,10 @@ my @primers=();
     					#print "$key\t${$all_results}{$key}\n";
     					#print $key."\n";
  					}
- 					print $results{'PRIMER_LEFT_0_SEQUENCE'}."\n";
- 					print $results{'PRIMER_RIGHT_0_SEQUENCE'}."\n";
+ 					#print $results{'PRIMER_LEFT_0_SEQUENCE'}."\n";
+ 					#print $results{'PRIMER_RIGHT_0_SEQUENCE'}."\n";
+ 					push(@primers,$results{'PRIMER_LEFT_0_SEQUENCE'});
+ 					push(@primers,$results{'PRIMER_RIGHT_0_SEQUENCE'});
  	return @primers;
 }
 
