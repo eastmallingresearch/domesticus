@@ -3,14 +3,8 @@
 
 use warnings;
 use strict;
-use Bio::AlignIO;
-use Bio::SeqIO;
-use Bio::Seq;
-use Bio::SimpleAlign;
 use Bio::SeqFeature::Generic;
 use Bio::LocatableSeq;
-use Bio::DB::SeqFeature;
-use Bio::DB::SeqFeature::Store;
 use Bio::Restriction::EnzymeCollection;
 use Bio::Restriction::Analysis;
 use Bio::Coordinate::Pair;
