@@ -216,7 +216,9 @@ BEGIN {
  SEQUENCE_FORCE_LEFT_START
  SEQUENCE_FORCE_RIGHT_START
  PRIMER_THERMODYNAMIC_PARAMETERS_PATH
+ PRIMER_MAX_SIZE
 );
+
 
 
 	foreach my $attr (@PRIMER3_PARAMS) {$OK_FIELD{$attr}++}
@@ -700,7 +702,8 @@ sub _input_args {
   'PRIMER_WT_TEMPLATE_MISPRIMING' => '(float, default 0.0)',
   'SEQUENCE_FORCE_LEFT_START' => '(int, default 0)',
   'SEQUENCE_FORCE_RIGHT_START' => '(int, default 0)',
-  'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '(string)'
+  'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '(string)',
+  'PRIMER_MAX_SIZE' => '(int, default 33)'
 );
  $self->{'input_options'}=\%hash;
  return \%hash;
