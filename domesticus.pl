@@ -550,40 +550,6 @@ sub coord_convert{
 	}
 
 
-exit;
-
-
-
-print "VIRTUAL GEL OF FRAGMENTS \n" ;
-
-my @gel;
-  my @bam_maps = $ra->fragment_maps('multiple_digest');
-  foreach my $i (@bam_maps) {
-     my $start = $i->{start};
-     my $end = $i->{end};
-     my $sequence = $i->{seq};
-    push @gel, "$start--$sequence--$end";
-     @gel = sort {length $b <=> length $a} @gel;
-  }
-  print join("\n", @gel) . "\n";
-  
-  print "POSITIONS OF DIGESTIONS \n";
-  
-my @positions = $ra->positions('multiple_digest');
-	foreach(@positions){
-		print $_."\n";
-	}
-print "FRAGMENTS CREATED FROM DIGESTIONS\n";
-
-my @fragments = $ra->fragments('multiple_digest');
-	foreach(@fragments){
-		print $_."\n";
-	};
-
-
-print "Multiple digest fragment lengths: ", join(' & ', map {length $_} @fragments), "\n";
-
-  
 
 #primary      
 #restriction
