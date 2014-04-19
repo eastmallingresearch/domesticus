@@ -44,22 +44,147 @@ my @seqobjects=generate_objects(\@enzymes,\$ra, \$locatable_seq);
 
 
 #GENERATE THE INFO ABOUT STRAND AND RECOGNITION SITE
-
 recognition_sites(\@seqobjects, \$custom_collection);
 	
 #CONVERT COORDINATES
-
 coord_convert(\@seqobjects);
 
 ##MUTAGENESIS POSITION
-
 mutagenesis(\@seqobjects);
-
 print "\nMUTAGENESIS SUCCESSFUL- HAVE IDENTIFIED LESIONS \n";
 
+#PRIMERS- DESIGN PRIMERS FOR THE MUTAGENESIS###
+#FOR EACH LESION THE MUTATION MUST BE IN THE FIRST 4BP OF THE HOMOLOGOUS REGION OF THE 
+#PRIMER- WHETHER FORWARD OR REVERSE
+
+print "\nDESIGNING PRIMER SETS \n";
+
+my %primers=design_primer(\@seqobjects,\$locatable_seq);
+	
 
 
 #############SUBROUTINES##################
+
+######DESIGN PRIMERS########NOTE I HAD TO INSTALL CLONE FROM CPAN TO MAKE THIS WORK
+
+sub design_primer{
+	my ($seqobj,$seq)=@_;
+	  use Bio::Tools::Primer3;
+	  use Bio::SeqIO;
+	
+	 my %results=();
+	 my $pairs=scalar(@$seqobj)+1;
+	 
+	  print scalar(@$seqobj)." cuts so ".$pairs." sets of primers\n"; 
+	  
+	  ;
+	  my $primer3 = Bio::Tools::Primer3->new(-seq => $$seq,
+		                                      -outfile => "temp.out",
+		                                      -path => "/home/harrir/prog/primer3-1.1.3/");
+
+	print "SEARCHING FOR PRIMERS\n";
+	my @array_of_positions=();
+	
+	for (my $i=0; $i<=$pairs;$i++){
+		
+		if ($i==0){
+		push (@array_of_positions,['x','x','x',$$seq->start()]);
+		}	
+		if ($i==$pairs){
+		push (@array_of_positions,['x','x','x',$$seq->end()]);
+		}	
+		
+		if ($i>0 && $i<=scalar(@$seqobj)){
+			print "retrieving sequence ".$i."\n";
+			my $feat=$$seqobj[$i-1];
+			my @thirteen= $feat->get_tag_values('thirteen');
+			foreach(@thirteen){
+				my @tmp=@{$_};
+					foreach (@tmp){
+						print $_."\t";
+						}
+					push (@array_of_positions,\@tmp);				
+				print "\n";
+				}
+			}
+		}
+	
+	
+	print "PRIMER ARRAY \n";
+	foreach(@array_of_positions){
+		my @tmp=@{$_};
+			foreach (@tmp){
+			print $_."\t";
+			}
+			print "\n";
+			}
+	
+	my $mutagenised_seq=mutagenise_seq(\$$seq,\@array_of_positions);
+	
+	
+		
+	
+	#my $len=$exc2-$exc1;
+	#print "EXCLUDED REGION $exc1 .. $exc2 length $len\n";
+	#my $exc=($exc1.",".$len);
+#	print "EXCLUDED REGION $exc\n";
+	
+	  # what are the arguments, and what do they mean?
+#	  my $args = $primer3->arguments;
+
+	 # print "ARGUMENT\tMEANING\n";
+#	  foreach my $key (keys %{$args}) {print "$key\t", $$args{$key}, "\n"}
+	#
+	  # set the maximum and minimum Tm of the primer
+#	 	$primer3->add_targets('PRIMER_MIN_TM'=>57, 'PRIMER_MAX_TM'=>63,
+	# 						'PRIMER_PRODUCT_OPT_SIZE'=>300,'PRIMER_OPT_SIZE'=>22,
+	 #						'PRIMER_GC_CLAMP'=>2,'PRIMER_PRODUCT_SIZE_RANGE'=>'200-490',
+	 #						'EXCLUDED_REGION'=>$exc);
+
+	  # design the primers. This runs primer3 and returns a 
+	  # Bio::Tools::Run::Primer3 object with the results
+	 
+	# my $results = $primer3->run;
+
+	  # see the Bio::Tools::Run::Primer3 pod for
+	  # things that you can get from this. For example:
+
+	#  print "There were ", $results->number_of_results, " primers\n";
+#exit;
+	return %results;
+
+	
+}
+
+
+###EDIT SEQ TO CONTAIN ABOLISHED RESTRICTION SITES
+
+sub mutagenise_seq{
+my ($seq,$aop)=@_;
+
+
+my $nucl=$$seq->seq();
+my @nucleotides=split ('',$nucl);
+
+#print scalar(@$aop)."\n";
+
+
+	foreach (@$aop){
+	my @split_data=@{$_};
+	
+		if ($split_data[2] ne 'x'){
+			my $val=$split_data[3];
+			print "editing nucleotide ".$split_data[3]." from \t";
+			print $nucleotides[$val-1]."\t to ";
+			print $split_data[2]."\n";
+		 	$nucleotides[$val-1]=$split_data[2];
+			}
+	}
+	my $tmp_seq=join "", @nucleotides;
+	my $newseq =  Bio::LocatableSeq->new(-seq => $tmp_seq);
+
+return $newseq;
+}
 
 ########MUTAGENESIS##########
 
@@ -68,7 +193,7 @@ my ($seqs)=@_;
 
 
 #IN THIS SUBROUTINE, NOW THAT ALL THE COORDINATES ARE KNOWN AND THE FRAME OF THE 
-#CUT SITE IS UNDERSTOOD SYNONYMOUS CHANGES NEED TO BE FOUND THAT WILL ABOLISH THE CUT 
+#CUT SITE IS UNDERSTOOD, SYNONYMOUS CHANGES ARE FOUND THAT WILL ABOLISH THE CUT 
 #SITE
 use Bio::Tools::CodonTable;
 my $myCodonTable   = Bio::Tools::CodonTable->new();
@@ -144,7 +269,8 @@ print  join (' ', "The name of the codon table no.", $myCodonTable->id(1),
 }
 
 
-########MUTATOR- THIS TAKES THE CODONS- THE CURRENT CODON AND RETURNS A MUTATION
+########MUTATOR- THIS TAKES THE CODONS- THE CURRENT CODON AND RETURNS A MUTATION- DEPENDS
+#UPON THE MUTAGENESIS SUBROUTINE
 
 sub mutator {
 
@@ -497,6 +623,8 @@ print "Multiple digest fragment lengths: ", join(' & ', map {length $_} @fragmen
 #PEPTIDE
 #twelve
 #NUCLEOTIDE IN FRAME (within which is recognition site)
-
+#thirteen
+#array of arrays with following format
+# CODON_OLD	CODON_NEW	NUC	NUC_POS
 
   
