@@ -20,7 +20,6 @@ my %tails = (
         right_outer => "tgaagacnnTTTT"
     );
     
-    
 #READ IN THE DNA SEQUENCE
 my $file         = shift; 
 my $input_object = Bio::SeqIO->new(-file => $file);
@@ -41,7 +40,6 @@ $ra->multiple_digest($custom_collection);
 
 #CREATE GENERIC OBJECTS
 my @seqobjects=generate_objects(\@enzymes,\$ra, \$locatable_seq);
-
 
 #GENERATE THE INFO ABOUT STRAND AND RECOGNITION SITE
 recognition_sites(\@seqobjects, \$custom_collection);
