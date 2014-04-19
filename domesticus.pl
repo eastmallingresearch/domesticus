@@ -69,7 +69,7 @@ my %primers=design_primer(\@seqobjects,\$locatable_seq);
 
 sub design_primer{
 	my ($seqobj,$seq)=@_;
-	  use Bio::Tools::Primer3;
+	  use Bio::Tools::Run::Primer3;
 	  use Bio::SeqIO;
 	
 	 my %results=();
@@ -78,10 +78,7 @@ sub design_primer{
 	  print scalar(@$seqobj)." cuts so ".$pairs." sets of primers\n"; 
 	  
 	  ;
-	  my $primer3 = Bio::Tools::Primer3->new(-seq => $$seq,
-		                                      -outfile => "temp.out",
-		                                      -path => "/home/harrir/prog/primer3-1.1.3/");
-
+	  
 	print "SEARCHING FOR PRIMERS\n";
 	my @array_of_positions=();
 	
@@ -109,48 +106,51 @@ sub design_primer{
 			}
 		}
 	
-	
-	print "PRIMER ARRAY \n";
-	foreach(@array_of_positions){
-		my @tmp=@{$_};
-			foreach (@tmp){
-			print $_."\t";
-			}
-			print "\n";
-			}
-	
 	my $mutagenised_seq=mutagenise_seq(\$$seq,\@array_of_positions);
 	
 	
+	print "PRIMER ARRAY \n";
+	for (my $i=0; $i<$pairs;$i++){
+		print "PRIMER SET $i \t";
+		my @primer_f=@{$array_of_positions[$i]};
+		my @primer_r=@{$array_of_positions[$i+1]};
 		
+		
+		if ($i==0){
+			my $fw=($primer_f[3]);
+			my $rv=($primer_r[3])+1;
+			print $fw."\t";
+			print $rv."\n";
+			
+			my $primer3 = Bio::Tools::Run::Primer3->new(-seq => $$seq,
+		                                      -outfile => "temp.out",
+			                                #-path => "/home/harrir/prog/primer3-1.1.3/");
+		                                     -path => "/home/harrir/prog/primer3-2.3.6/"); 
+			$primer3->add_targets('PRIMER_SEQUENCE_ID'=>"test",
+			'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
+			'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
+			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
+			 my $results = $primer3->run;
+			print "There were ", $results->number_of_results, " primers\n";
+		}
+		
+		if ($i==($pairs-1)){
+			
+			my $fw=($primer_f[3])-1;
+			my $rv=($primer_r[3]);
+			print $fw."\t";
+			print $rv."\n";
+		}
+		
+		if ($i>0 && $i<scalar(@$seqobj)){
+			my $fw=($primer_f[3])-1;
+			my $rv=($primer_r[3]+1);
+			print $fw."\t";
+			print $rv."\n";
+			
+		}
+	}
 	
-	#my $len=$exc2-$exc1;
-	#print "EXCLUDED REGION $exc1 .. $exc2 length $len\n";
-	#my $exc=($exc1.",".$len);
-#	print "EXCLUDED REGION $exc\n";
-	
-	  # what are the arguments, and what do they mean?
-#	  my $args = $primer3->arguments;
-
-	 # print "ARGUMENT\tMEANING\n";
-#	  foreach my $key (keys %{$args}) {print "$key\t", $$args{$key}, "\n"}
-	#
-	  # set the maximum and minimum Tm of the primer
-#	 	$primer3->add_targets('PRIMER_MIN_TM'=>57, 'PRIMER_MAX_TM'=>63,
-	# 						'PRIMER_PRODUCT_OPT_SIZE'=>300,'PRIMER_OPT_SIZE'=>22,
-	 #						'PRIMER_GC_CLAMP'=>2,'PRIMER_PRODUCT_SIZE_RANGE'=>'200-490',
-	 #						'EXCLUDED_REGION'=>$exc);
-
-	  # design the primers. This runs primer3 and returns a 
-	  # Bio::Tools::Run::Primer3 object with the results
-	 
-	# my $results = $primer3->run;
-
-	  # see the Bio::Tools::Run::Primer3 pod for
-	  # things that you can get from this. For example:
-
-	#  print "There were ", $results->number_of_results, " primers\n";
-#exit;
 	return %results;
 
 	
@@ -166,7 +166,7 @@ my ($seq,$aop)=@_;
 my $nucl=$$seq->seq();
 my @nucleotides=split ('',$nucl);
 
-#print scalar(@$aop)."\n";
+print "NUCLEOTIDE EDITOR SUBROUTINE \n";
 
 
 	foreach (@$aop){
