@@ -152,6 +152,7 @@ sub design_primer{
 
 
 ######APPEND THE TAILS TO THE PRIMERS########
+
 sub append_primers{
 	my($primers,$flag,$tails)=@_;
 	my %hash=%{$tails};
@@ -207,6 +208,8 @@ sub primer_design{
  					push(@primers,$results{'PRIMER_RIGHT_0_SEQUENCE'});
  	return @primers;
 	}
+
+########GET THE SEQUENCE AND CHANGE THE POINT MUTATIONS TO THOSE IDENTIFIED
 
 sub mutagenise_seq{
 	my ($seq,$aop)=@_;
@@ -435,6 +438,7 @@ sub generate_objects{
 
 
 ############# ENZYMES FROM REBASE########
+
 sub pull_enzymes{
 	my ($enzymes)=@_;
 	#GET A DATABASE OF RESTRICTION SITES
@@ -455,6 +459,7 @@ sub pull_enzymes{
 	}
 
 ############CUTS#############
+
 sub find_cuts{
 	my ($enzymes,$ra)=@_;
 	my %hash=();
@@ -469,7 +474,7 @@ sub find_cuts{
 				$hash{$_}=\@cuts;
 			}
 		}
-#PRINT OUT SUMMARY OF DATA IN THE HASH
+	#PRINT OUT SUMMARY OF DATA IN THE HASH
 	foreach (keys %hash){
 		#print "STORED CUTS BY $_ ";
 		my @cuts=@{$hash{$_}};
@@ -480,11 +485,9 @@ sub find_cuts{
 	}
 
 ######CONVERT COORDINATES DNA TO PROT##########
+
 sub coord_convert{
 	my ($seqs)=@_;
-
-	####SEQUENCE COORDINATE CONVERSION FROM DNA TO PROTEIN
-
 	foreach (@$seqs){
 		my $input_prot=$_->entire_seq()->translate();
 		my @three= $_->get_tag_values('three');
