@@ -46,66 +46,16 @@ my @seqobjects=generate_objects(\@enzymes,\$ra, \$locatable_seq);
 #GENERATE THE INFO ABOUT STRAND AND RECOGNITION SITE
 
 recognition_sites(\@seqobjects, \$custom_collection);
-
-
 	
-#ONCE ALL COORDINATES IN CHECK CODONS
-
 #CONVERT COORDINATES
+
 coord_convert(\@seqobjects);
-#print "Converted coordinates \n";
-
-foreach (@seqobjects){
-	#print $_->source_tag."\t";
-	my $tag=$_->source_tag;
-	#print $tag."\n";
-	#print $_->primary_tag."\t";
-	my @one= $_->get_tag_values('one');
-	my @two= $_->get_tag_values('two');
-	my @three= $_->get_tag_values('three');
-	my @four= $_->get_tag_values('four');
-	my @five= $_->get_tag_values('five');
-	my @six= $_->get_tag_values('six');
-	my @seven= $_->get_tag_values('seven');
-	my @eight= $_->get_tag_values('eight');
-	my @nine= $_->get_tag_values('nine');
-	my @ten= $_->get_tag_values('ten');
-	my @eleven= $_->get_tag_values('eleven');
-	
-	#print join "\t", @one;
-	#print "\t";
-	#print join "\t", @two;
-	#print "\t";
-	#print join "\t", @three;
-	#print "\t";#
-	#print join "\t", @four;
-	#print "\t";
-	#print $_->strand;
-	#print "\t";	
-	#print join "\t", @five;
-	#print "\t";
-	#print join "\t", @six;
-	#print "\t";
-	#print join "\t", @seven;
-	#print "\t";
-	#print join "\t", @eight;
-	#print "\t";
-	#print join "\t", @nine;
-	#print "\t";
-	#print join "\t", @ten;
-	#print "\t";
-	#print join "\t", @eleven;
-	#print "\n";
-	
-	
-	}
-	
-
 
 ##MUTAGENESIS POSITION
 
 mutagenesis(\@seqobjects);
 
+print "\nMUTAGENESIS SUCCESSFUL- HAVE IDENTIFIED LESIONS \n";
 
 
 
@@ -140,15 +90,15 @@ print  join (' ', "The name of the codon table no.", $myCodonTable->id(1),
 		my @split_eleven=split('',$eleven[0]);
 		my @split_twelve=split('',$twelve[0]);
 		my $counter=0; 
-	    print "\n\n\nCODON MUTATION FOR ".$_->primary_tag." BASES BEING CONSIDERED\t";
+	    print "\n\n\nCODON MUTATION FOR ".$_->primary_tag." ".$_->source_tag." BASES BEING CONSIDERED\t";
 		print scalar(@split_twelve)."\n";
-		
+		my @all_mutations=();
 		# FOR EACH AA SITE IN PEPTIDE FIND MUTATIONS
 		
 			for (my $i=0;$i<scalar(@split_twelve);$i=$i+3){	
 	 			my $codon =($split_twelve[$i].$split_twelve[$i+1].$split_twelve[$i+2]);
 	 			#print "CODON ".$codon."\n";
-	 			print "AMINO ACID ".$split_eleven[$counter]."\n";
+	 			#print "AMINO ACID ".$split_eleven[$counter]."\n";
 	 			#print "EXAMINING CODON TABLE\n";
 	 			my @codons = $myCodonTable->revtranslate($split_eleven[$counter]);
   	 			#print join "\t", @codons;
@@ -158,22 +108,38 @@ print  join (' ', "The name of the codon table no.", $myCodonTable->id(1),
 				if (scalar @codons>1){
 					#PROVIDE THIS SUBROUTINE WITH DETAILS OF PEPTIDE, RECOGNITION SITE AND POSITION IN CURRENT LOOP
 					my @mutations=mutator(\@codons,\$codon,\$i,\$three[0],\$four[0],\$seven[0],\$eight[0]);
-					print "MUTATION AT SITE WITHIN RECOGNITION SEQUENCE ".$counter."\n";
+					#print "MUTATION AT SITE WITHIN RECOGNITION SEQUENCE ".$counter."\n";
 					foreach(@mutations){
-						my @tmp=$_;
-							foreach (@tmp){
-								print $_."\t";
-							}
-							
+								push (@all_mutations,$_);
 						}
-						print "\n";
-						
 					}
 				$counter=$counter+1;
 			}
-			
 		###NOW YOU HAVE A PILE OF POSSIBLE MUTATIONS, PICK ONE AND ADD COORDINATES
-		#print $_->source_tag."\t";
+		
+		print "POSSIBLE MUTATIONS ".scalar(@all_mutations)."\n";
+		print "PICKING NUMBER BETWEEN 0 AND ".(scalar(@all_mutations)-1)."\n";
+		my $random_number = int(rand((scalar(@all_mutations)-1)));
+		print "PICKED ".$random_number."\n";
+		my @pick=();
+		my $j=0;
+		foreach(@all_mutations){		
+						my @tmp=@{$_};
+						if ($j==$random_number){
+							@pick=@tmp;
+							}
+							$j++;
+						}
+		$_->add_tag_value('thirteen',\@pick);
+		my @thirteen= $_->get_tag_values('thirteen');
+		
+		foreach(@thirteen){
+			my @tmp=@{$_};
+				foreach (@tmp){
+						print $_."\t";
+						}					
+			print "\n";
+			}
 		}
 }
 
@@ -209,7 +175,7 @@ foreach (@$codons){
        			 		push (@tmp,$cod);
        			 		push (@tmp,$s2[$i]);	
        			 		push (@tmp,$position);
-       			 		push (@mutated,@tmp);
+       			 		push (@mutated,\@tmp);
        			 		}
        			 		else{
        			 	#		print "BAD SITE\n";
@@ -400,7 +366,7 @@ foreach (@$seqs){
 	my @three= $_->get_tag_values('three');
 	my @four= $_->get_tag_values('four');
 	#print $input_prot->seq;
-	print "SEQUENCE COORDINATES \n\n";
+	print "\nSEQUENCE COORDINATES \n\n";
 	print "GENE \t";
 	print $_->start."\t";
 	print $_->end."\n";
