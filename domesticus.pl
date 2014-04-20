@@ -133,16 +133,16 @@ sub design_primer{
 			print $fw."\t";
 			print $rv."\n";
 			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
-			append_primers(\@primers,\'internal',\%$tails);
+			append_primers(\@primers,\'internal',\%$tails); 
 		}
 		else{
 			print "ERROR in the design primer subroutine \n";
-			}
+			} 
 	}
-	return %results;	
+	return %results;	 
 }
-
-
+ 
+ 
 ######APPEND THE TAILS TO THE PRIMERS########
 
 sub append_primers{
@@ -189,6 +189,8 @@ sub primer_design{
 			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
 			my $results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
+			
+			if ($results->number_of_results>0){
 			my $all_results = $results->all_results;
 			my %results=%{$all_results};
 	 				foreach my $key (keys %{$all_results}) {
@@ -197,6 +199,53 @@ sub primer_design{
  					}
  					push(@primers,$results{'PRIMER_LEFT_0_SEQUENCE'});
  					push(@primers,$results{'PRIMER_RIGHT_0_SEQUENCE'});
+ 			}
+ 			else{
+ 			
+ 			print "PROBLEM USING LESS STRINGENCY MANUAL CHECKING RECOMMENDED \n";
+ 			###PICK THE LEFT PRIMER####
+ 			$primer3->add_targets('PRIMER_SEQUENCE_ID'=>"test",
+ 			'PRIMER_PICK_LEFT_PRIMER'=>"1",
+ 			'PRIMER_PICK_RIGHT_PRIMER'=>"0",
+			'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
+			#'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
+			'PRIMER_PICK_ANYWAY'=>"1",
+			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
+			my $results = $primer3->run;
+			print "There were ", $results->number_of_results, " primers\n";
+			
+			if ($results->number_of_results>0){
+			my $all_results = $results->all_results;
+			my %results=%{$all_results};
+	 				foreach my $key (keys %{$all_results}) {
+    					#print "$key\t${$all_results}{$key}\n";
+    					#print $key."\n";
+ 					}
+ 					push(@primers,$results{'PRIMER_LEFT_0_SEQUENCE'});
+ 			}
+ 			###PICK THE RIGHT PRIMER####
+			$primer3->add_targets('PRIMER_SEQUENCE_ID'=>"test",
+ 			'PRIMER_PICK_LEFT_PRIMER'=>"0",
+ 			'PRIMER_PICK_RIGHT_PRIMER'=>"1",
+			#'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
+			'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
+			'PRIMER_PICK_ANYWAY'=>"1",
+			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
+			my $results = $primer3->run;
+			print "There were ", $results->number_of_results, " primers\n";
+			
+			if ($results->number_of_results>0){
+			my $all_results = $results->all_results;
+			my %results=%{$all_results};
+	 				foreach my $key (keys %{$all_results}) {
+    					#print "$key\t${$all_results}{$key}\n";
+    					#print $key."\n";
+ 					}
+ 					push(@primers,$results{'PRIMER_LEFT_0_SEQUENCE'});
+ 			}
+ 		
+ 			
+ 			}
  	return @primers;
 	}
 
