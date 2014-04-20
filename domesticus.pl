@@ -189,7 +189,7 @@ sub primer_design{
 			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
 			my $results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
-			
+
 			if ($results->number_of_results>0){
 			my $all_results = $results->all_results;
 			my %results=%{$all_results};
@@ -213,7 +213,7 @@ sub primer_design{
 			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
 			$results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
-			
+
 			if ($results->number_of_results>0){
 			my $all_results = $results->all_results;
 			my %results=%{$all_results};
@@ -233,7 +233,7 @@ sub primer_design{
 			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
 			$results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
-			
+
 			if ($results->number_of_results>0){
 			my $all_results = $results->all_results;
 			my %results=%{$all_results};
@@ -241,14 +241,14 @@ sub primer_design{
     					#print "$key\t${$all_results}{$key}\n";
     					#print $key."\n";
  					}
- 					push(@primers,$results{'PRIMER_LEFT_0_SEQUENCE'});
+ 					push(@primers,$results{'PRIMER_RIGHT_0_SEQUENCE'});
  			}
  		
  			
  			}
  	return @primers;
 	}
-
+	
 ########GET THE SEQUENCE AND CHANGE THE POINT MUTATIONS TO THOSE IDENTIFIED
 
 sub mutagenise_seq{
