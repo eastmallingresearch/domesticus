@@ -1,0 +1,3 @@
+oh1_l	AAAA
+oh1_r	TTTT
+BpiI	GAAGAC

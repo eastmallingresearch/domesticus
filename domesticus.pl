@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 
-
 use warnings;
 use strict;
 use Bio::SeqFeature::Generic;
@@ -36,11 +35,8 @@ my $enz_file= shift;
 open ENZ, "<", $enz_file or die $!;
 my @enzymes = <ENZ>;
 close ENZ;
-#print @enzymes;
-#exit;
-#my @enzymes=('BbsI','BsmBI','BsaI');
 
-#SANITY CHECK (SILENT FOR TRANSLATABLE SEQUENCE WITH NO STOPS OTHER THAN END)
+#SANITY CHECK (SILENT FOR TRANSLATABLE SEQUENCE WITH NO STOPS OTHER THAN END) TO DO!!
 my $input_prot= $locatable_seq->translate;
 #print $input_prot->seq,"\n";
 
