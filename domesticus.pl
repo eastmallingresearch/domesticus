@@ -11,21 +11,34 @@ use Bio::Coordinate::Pair;
 use Bio::Location::Simple;
 use Bio::Coordinate::GeneMapper;
 
-#DEFINE THE RESTRICTION SITES
-my @enzymes=('BbsI','BsmBI','BsaI');
-my %tails = (
-        left_outer  => "tgaagacnnAAAA",
-        left_inner   => "tgaagacnn",
-        right_inner => "tgaagacnn",
-        right_outer => "tgaagacnnTTTT"
-    );
-    
+ 
 #READ IN THE DNA SEQUENCE
 my $file         = shift; 
 my $input_object = Bio::SeqIO->new(-file => $file);
 my $input_seq= $input_object->next_seq;
-
 my $locatable_seq =  Bio::LocatableSeq->new(-seq => $input_seq->seq);
+
+#READ ARGS
+my $arg_file= shift;
+open ARG, "<", $arg_file or die $!;
+my @arg = <ARG>;
+close ARG;
+
+#READ IN RES AND OVERHANGS
+my $rso_file= shift;
+open RES, "<", $rso_file or die $!;
+my @lines = <RES>;
+close RES;
+my %tails=build_overhangs(\@lines,\@arg);
+
+#DEFINE THE RESTRICTION SITES
+my $enz_file= shift;
+open ENZ, "<", $enz_file or die $!;
+my @enzymes = <ENZ>;
+close ENZ;
+#print @enzymes;
+#exit;
+#my @enzymes=('BbsI','BsmBI','BsaI');
 
 #SANITY CHECK (SILENT FOR TRANSLATABLE SEQUENCE WITH NO STOPS OTHER THAN END)
 my $input_prot= $locatable_seq->translate;
@@ -56,7 +69,6 @@ print "\nMUTAGENESIS SUCCESSFUL- HAVE IDENTIFIED LESIONS \n";
 #PRIMER- WHETHER FORWARD OR REVERSE
 
 print "\nDESIGNING PRIMER SETS \n";
-
 my %primers=design_primer(\@seqobjects,\$locatable_seq,\%tails);
 	
 
@@ -64,6 +76,43 @@ my %primers=design_primer(\@seqobjects,\$locatable_seq,\%tails);
 #############SUBROUTINES##################
 
 ######DESIGN PRIMERS########NOTE I HAD TO INSTALL CLONE FROM CPAN TO MAKE THIS WORK
+sub make_hash{
+my ($hashlist)=@_;
+
+my %hash=();
+
+	foreach my $argument (@$hashlist){
+		my @split=split('\t',$argument);
+		chomp $split[1];	
+		$hash{$split[0]}=$split[1];
+		}
+	return %hash;
+}
+
+
+sub build_overhangs{
+	my ($sites,$arg)=@_;
+	
+	my %hashofparts=make_hash(\@$sites);
+	my %hashofmap=make_hash(\@$arg);
+	my %combined_hash=();
+	
+	foreach (keys %hashofmap){
+		my $val=$hashofmap{$_};
+		$combined_hash{$_}=$hashofparts{$val};
+	}
+	
+	my %tails = (
+        left_outer  => "t".$combined_hash{'restriction_site'}."nn".$combined_hash{'left_overhang'},
+        left_inner   => "t".$combined_hash{'restriction_site'}."nn",
+        right_inner => "t".$combined_hash{'restriction_site'}."nn",
+        right_outer => "t".$combined_hash{'restriction_site'}."nn".$combined_hash{'right_overhang'}
+    );
+    
+	return %tails;
+}
+
+
 
 sub design_primer{
 	my ($seqobj,$seq,$tails)=@_;
@@ -203,6 +252,7 @@ sub primer_design{
  			else{
  			
  			print "PROBLEM USING LESS STRINGENCY MANUAL CHECKING RECOMMENDED \n";
+ 			
  			###PICK THE LEFT PRIMER####
  			$primer3->add_targets('PRIMER_SEQUENCE_ID'=>"test",
  			'PRIMER_PICK_LEFT_PRIMER'=>"1",
@@ -490,6 +540,7 @@ sub pull_enzymes{
 	my $custom_collection = Bio::Restriction::EnzymeCollection->new(-empty => 1);
 	#PUSH INTO CUSTOM COLLECTION FROM REBASE
 		foreach (@$enzymes){
+			chomp $_;
 			#print "Retreving ". $_."\n";
 			my $re=$rebase_collection->get_enzyme($_);
 			#print $re->name();
@@ -505,6 +556,7 @@ sub find_cuts{
 	my %hash=();
 	#LOOP AROUND THE ENZYMES AND PRINT OUT CUT STATS
 	foreach (@$enzymes){
+		chomp $_;
 		print "CUTS BY $_ ";
 		my $cut= $$ra->cuts_by_enzyme($_);
 		print ($cut/2,"\n");
