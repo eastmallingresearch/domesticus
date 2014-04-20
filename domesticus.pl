@@ -438,7 +438,7 @@ sub mutator {
        			 		push (@mutated,\@tmp);
        			 		}
        			 		else{
-       			 			print "BAD SITE IN MUTATOR SUBROUTINE\n";
+       			 			print "CODON SITE NOT IN RECOGNITION AREA\n";
        			 			}
     				}
    				 $i++;
