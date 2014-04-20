@@ -211,7 +211,7 @@ sub primer_design{
 			#'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
 			'PRIMER_PICK_ANYWAY'=>"1",
 			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
-			my $results = $primer3->run;
+			$results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
 			
 			if ($results->number_of_results>0){
@@ -231,7 +231,7 @@ sub primer_design{
 			'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
 			'PRIMER_PICK_ANYWAY'=>"1",
 			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
-			my $results = $primer3->run;
+			$results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
 			
 			if ($results->number_of_results>0){
