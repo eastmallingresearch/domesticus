@@ -36,12 +36,20 @@ open ENZ, "<", $enz_file or die $!;
 my @enzymes = <ENZ>;
 close ENZ;
 
+#DEFINE THE PARAMETERS
+my $param_file= shift;
+open PAR, "<", $param_file or die $!;
+my @param = <PAR>;
+close PAR;
+my %params=make_hash(\@param);
+
+
 #SANITY CHECK (SILENT FOR TRANSLATABLE SEQUENCE WITH NO STOPS OTHER THAN END) TO DO!!
 my $input_prot= $locatable_seq->translate;
 #print $input_prot->seq,"\n";
 
 #GET ENZYMES FROM REBASE FILE
-my $custom_collection=pull_enzymes(\@enzymes);
+my $custom_collection=pull_enzymes(\@enzymes,\%params);
 
 #DEFINE A RESTRICTION ANALYSIS OBJECT
 my $ra = Bio::Restriction::Analysis->new(-seq=>$locatable_seq, -enzymes=>$custom_collection);
@@ -65,7 +73,7 @@ print "\nMUTAGENESIS SUCCESSFUL- HAVE IDENTIFIED LESIONS \n";
 #PRIMER- WHETHER FORWARD OR REVERSE
 
 print "\nDESIGNING PRIMER SETS \n";
-my %primers=design_primer(\@seqobjects,\$locatable_seq,\%tails);
+my %primers=design_primer(\@seqobjects,\$locatable_seq,\%tails,\%params);
 	
 
 
@@ -111,10 +119,10 @@ sub build_overhangs{
 
 
 sub design_primer{
-	my ($seqobj,$seq,$tails)=@_;
+	my ($seqobj,$seq,$tails,$params)=@_;
 	my %results=();
 	my $pairs=scalar(@$seqobj)+1;
-
+	my %params=%{$params};
 	print scalar(@$seqobj)." cuts so ".$pairs." sets of primers\n"; 
 	  
 	
@@ -160,7 +168,7 @@ sub design_primer{
 			my $rv=($primer_r[3])+1;
 			print $fw."\t";
 			print $rv."\n";
-			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
+			my @primers=primer_design($fw,$rv,\$mutagenised_seq,\%params);
 			append_primers(\@primers,\'start',\%$tails);
 		}
 		elsif ($i==($pairs-1)){
@@ -169,7 +177,7 @@ sub design_primer{
 			my $rv=($primer_r[3]);
 			print $fw."\t";
 			print $rv."\n";
-			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
+			my @primers=primer_design($fw,$rv,\$mutagenised_seq,\%params);
 			append_primers(\@primers,\'end',\%$tails);
 		}
 		elsif ($i>0 && $i<scalar(@$seqobj)){
@@ -177,7 +185,7 @@ sub design_primer{
 			my $rv=($primer_r[3]+1);
 			print $fw."\t";
 			print $rv."\n";
-			my @primers=primer_design($fw,$rv,\$mutagenised_seq);
+			my @primers=primer_design($fw,$rv,\$mutagenised_seq,\%params);
 			append_primers(\@primers,\'internal',\%$tails); 
 		}
 		else{
@@ -219,19 +227,23 @@ sub append_primers{
 ###EDIT SEQ TO CONTAIN ABOLISHED RESTRICTION SITES
 
 sub primer_design{
-	my($fw,$rv,$seq)=@_;
+	my($fw,$rv,$seq,$params)=@_;
+	my %params=%{$params};
+	my $p3_path=$params{'primer3_param'};
+	my $p3_thermo=$params{'thermo_param'};
+	
 	use Bio::Tools::Run::Primer3;
 	my @primers=();
 			my $primer3 = Bio::Tools::Run::Primer3->new(-seq => $$seq,
 		                                      -outfile => "temp.out",
-		                                      -path => "/home/harrir/prog/primer3-2.3.6/"); 
+		                                      -path => $p3_path); 
 			$primer3->add_targets('PRIMER_SEQUENCE_ID'=>"test",
 			'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
 			'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
 			'PRIMER_MAX_DIFF_TM' =>"3",
 			'PRIMER_MAX_SIZE'=> "35",
 			'PRIMER_PICK_ANYWAY'=>"1",
-			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
+			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => $p3_thermo);
 			my $results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
 
@@ -256,7 +268,7 @@ sub primer_design{
 			'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
 			#'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
 			'PRIMER_PICK_ANYWAY'=>"1",
-			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
+			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' =>$p3_thermo);
 			$results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
 
@@ -276,7 +288,7 @@ sub primer_design{
 			#'SEQUENCE_FORCE_LEFT_START'=>$fw-1,
 			'SEQUENCE_FORCE_RIGHT_START'=>$rv-1,
 			'PRIMER_PICK_ANYWAY'=>"1",
-			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '/home/harrir/prog/primer3-2.3.6/src/primer3_config/');
+			'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => $p3_thermo);
 			$results = $primer3->run;
 			print "There were ", $results->number_of_results, " primers\n";
 
@@ -526,10 +538,13 @@ sub generate_objects{
 ############# ENZYMES FROM REBASE########
 
 sub pull_enzymes{
-	my ($enzymes)=@_;
+	my ($enzymes,$params)=@_;
+	my %params=%{$params};
+	my $rebasefile=$params{'rebase_file'};
+	
 	#GET A DATABASE OF RESTRICTION SITES
 	my $rebase = Bio::Restriction::IO->new(
-      -file   => 'withrefm.404',
+      -file   => $rebasefile,
       -format => 'withrefm' );
 	my $rebase_collection = $rebase->read();
 	#DEFINE A CUSTOM COLLECTION OF RESTRICTION ENZYMES

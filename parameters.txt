@@ -1,0 +1,3 @@
+rebase_file	withrefm.404
+thermo_param	/home/harrir/prog/primer3-2.3.6/src/primer3_config/
+primer3_param	/home/harrir/prog/primer3-2.3.6/
