@@ -148,7 +148,6 @@ sub design_primer{
 sub append_primers{
 	my($primers,$flag,$tails)=@_;
 	my %hash=%{$tails};
-
 	if ($$flag eq 'start'){
 		print "PRIMERS $$flag \n";
 		my $fwd=$hash{'left_outer'};
