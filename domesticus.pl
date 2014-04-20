@@ -15,7 +15,6 @@ use Bio::Coordinate::GeneMapper;
 my $file         = shift; 
 my $input_object = Bio::SeqIO->new(-file => $file);
 my $input_seq= $input_object->next_seq;
-my $locatable_seq =  Bio::LocatableSeq->new(-seq => $input_seq->seq);
 
 #READ ARGS
 my $arg_file= shift;
@@ -28,9 +27,10 @@ my $rso_file= shift;
 open RES, "<", $rso_file or die $!;
 my @lines = <RES>;
 close RES;
-my %tails=build_overhangs(\@lines,\@arg);
+my $coding_flag=();
+my %tails=build_overhangs(\@lines,\@arg,\$coding_flag);
 
-#DEFINE THE RESTRICTION SITES
+#DEFINE THE RESTRICTION ENZYMES
 my $enz_file= shift;
 open ENZ, "<", $enz_file or die $!;
 my @enzymes = <ENZ>;
@@ -41,12 +41,23 @@ my $param_file= shift;
 open PAR, "<", $param_file or die $!;
 my @param = <PAR>;
 close PAR;
-my %params=make_hash(\@param);
+my %params=make_hash(\@param,\'1');
 
+my $input_prot=();
+my $locatable_seq = ();
 
-#SANITY CHECK (SILENT FOR TRANSLATABLE SEQUENCE WITH NO STOPS OTHER THAN END) TO DO!!
-my $input_prot= $locatable_seq->translate;
-#print $input_prot->seq,"\n";
+	if ($coding_flag eq 'cd'){
+		my $subseq=();
+		my $end=length($input_seq->seq());
+		$subseq = $input_seq->trunc(4,$end);
+		$locatable_seq= Bio::LocatableSeq->new(-seq => $subseq->seq);
+		$input_prot= $locatable_seq->translate;
+		#print $input_prot->seq();
+		}
+	else{
+		$locatable_seq= Bio::LocatableSeq->new(-seq => $input_seq->seq);
+		}
+
 
 #GET ENZYMES FROM REBASE FILE
 my $custom_collection=pull_enzymes(\@enzymes,\%params);
@@ -78,32 +89,33 @@ my %primers=design_primer(\@seqobjects,\$locatable_seq,\%tails,\%params);
 
 
 #############SUBROUTINES##################
-
 ######DESIGN PRIMERS########NOTE I HAD TO INSTALL CLONE FROM CPAN TO MAKE THIS WORK
 sub make_hash{
-my ($hashlist)=@_;
+my ($hashlist,$pos)=@_;
 
 my %hash=();
 
 	foreach my $argument (@$hashlist){
 		my @split=split('\t',$argument);
-		chomp $split[1];	
-		$hash{$split[0]}=$split[1];
+		chomp $split[$$pos];	
+		$hash{$split[0]}=$split[$$pos];
 		}
 	return %hash;
 }
 
 
 sub build_overhangs{
-	my ($sites,$arg)=@_;
+	my ($sites,$arg,$flag)=@_;
 	
-	my %hashofparts=make_hash(\@$sites);
-	my %hashofmap=make_hash(\@$arg);
+	my %hashofparts=make_hash(\@$sites,\'1');
+	my %hashofmap=make_hash(\@$arg,\'1');
+	my %hashofflags=make_hash(\@$sites,\'2');
 	my %combined_hash=();
 	
 	foreach (keys %hashofmap){
 		my $val=$hashofmap{$_};
 		$combined_hash{$_}=$hashofparts{$val};
+		$$flag=$hashofflags{$val}
 	}
 	
 	my %tails = (

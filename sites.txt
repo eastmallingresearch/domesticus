@@ -1,37 +1,37 @@
-pro_l	GGAG
-pro_r	TACT
-pro_5u_l	GGAG
-pro_5u_r	AATG
-pro_5u_fuse_l	GGAG
-pro_5u_fuse_r	CCAT
-5u_ut_l	TACT
-5u_ut_r	AATG
-5u_ut_fuse_l	TACT
-5u_ut_fuse_r	CCAT
-5u_nt1_l	TACT
-5u_nt1_r	AATG
-nt1_l	CCAT
-nt1_r	AATG
-nt2_l	AATG
-nt2_r	AGGT
-sp_l	AATG
-sp_r	AGGT
-cds1_l	AATG
-cds1_r	GCTT
-cds1_ns_l	AATG
-cds1_ns_r	TTCG
-cds2_l	AGGT
-cds2_r	GCTT
-cds2_ns_l	AGGT
-cds2_ns_r	TTCG
-ct_l	TTCG
-ct_r	GCTT
-3u_l	GCTT
-3u_r	GGTA
-ter_l	GGTA
-ter_r	CGCT
-3u_ter_l	GCTT
-3u_ter_r	CGCT
-full_gene_l	GGAG
-full_gene_r	CGCT
-BpiI	GAAGAC
+pro_l	GGAG	nc
+pro_r	TACT	nc
+pro_5u_l	GGAG	nc
+pro_5u_r	AATG	nc
+pro_5u_fuse_l	GGAG	nc
+pro_5u_fuse_r	CCAT	nc
+5u_ut_l	TACT	nc
+5u_ut_r	AATG	nc
+5u_ut_fuse_l	TACT	nc
+5u_ut_fuse_r	CCAT	nc
+5u_nt1_l	TACT	nc
+5u_nt1_r	AATG	nc
+nt1_l	CCAT	cd
+nt1_r	AATG	cd
+nt2_l	AATG	cd
+nt2_r	AGGT	cd
+sp_l	AATG	cd
+sp_r	AGGT	cd
+cds1_l	AATG	cd
+cds1_r	GCTT	cd
+cds1_ns_l	AATG	cd
+cds1_ns_r	TTCG	cd
+cds2_l	AGGT	cd
+cds2_r	GCTT	cd
+cds2_ns_l	AGGT	cd
+cds2_ns_r	TTCG	cd
+ct_l	TTCG	cd
+ct_r	GCTT	cd
+3u_l	GCTT	nc
+3u_r	GGTA	nc
+ter_l	GGTA	nc
+ter_r	CGCT	nc
+3u_ter_l	GCTT	nc
+3u_ter_r	CGCT	nc
+full_gene_l	GGAG	cd
+full_gene_r	CGCT	cd
+BpiI	GAAGAC	nc
