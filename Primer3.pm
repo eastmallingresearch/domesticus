@@ -217,7 +217,10 @@ BEGIN {
  SEQUENCE_FORCE_RIGHT_START
  PRIMER_THERMODYNAMIC_PARAMETERS_PATH
  PRIMER_MAX_SIZE
+ PRIMER_PICK_RIGHT_PRIMER
+ PRIMER_PICK_LEFT_PRIMER
 );
+
 
 
 
@@ -703,7 +706,9 @@ sub _input_args {
   'SEQUENCE_FORCE_LEFT_START' => '(int, default 0)',
   'SEQUENCE_FORCE_RIGHT_START' => '(int, default 0)',
   'PRIMER_THERMODYNAMIC_PARAMETERS_PATH' => '(string)',
-  'PRIMER_MAX_SIZE' => '(int, default 33)'
+  'PRIMER_MAX_SIZE' => '(int, default 33)',
+  'PRIMER_PICK_RIGHT_PRIMER' => '(int, default 1)',
+  'PRIMER_PICK_LEFT_PRIMER' => '(int, default 1)'
 );
  $self->{'input_options'}=\%hash;
  return \%hash;
