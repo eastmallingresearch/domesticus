@@ -10,7 +10,8 @@ use Bio::Coordinate::Pair;
 use Bio::Location::Simple;
 use Bio::Coordinate::GeneMapper;
 
- 
+#./domesticus.pl Sdd1-C3.fasta args.txt sites.txt enzymes.txt parameters.txt
+
 #READ IN THE DNA SEQUENCE
 my $file         = shift; 
 my $input_object = Bio::SeqIO->new(-file => $file);
@@ -42,7 +43,7 @@ open PAR, "<", $param_file or die $!;
 my @param = <PAR>;
 close PAR;
 my %params=make_hash(\@param,\'1');
-
+ 
 my $input_prot=();
 my $locatable_seq = ();
 
@@ -103,6 +104,15 @@ my %hash=();
 	return %hash;
 }
 
+sub revcom{
+
+ my $dna = shift;
+	# reverse the DNA sequence
+        my $revcomp = reverse($dna);
+	# complement the reversed DNA sequence
+        $revcomp =~ tr/ACGTacgt/TGCAtgca/;
+        return $revcomp;
+}
 
 sub build_overhangs{
 	my ($sites,$arg,$flag)=@_;
@@ -117,12 +127,15 @@ sub build_overhangs{
 		$combined_hash{$_}=$hashofparts{$val};
 		$$flag=$hashofflags{$val}
 	}
+	#REVERSE COMPLEMENT THE OVERHANG (AS THIS IS WHAT THE PRIMER SHOULD BE)
+	my $rc_end=revcom($combined_hash{'right_overhang'});
+	
 	
 	my %tails = (
         left_outer  => "t".$combined_hash{'restriction_site'}."nn".$combined_hash{'left_overhang'},
         left_inner   => "t".$combined_hash{'restriction_site'}."nn",
         right_inner => "t".$combined_hash{'restriction_site'}."nn",
-        right_outer => "t".$combined_hash{'restriction_site'}."nn".$combined_hash{'right_overhang'}
+        right_outer => "t".$combined_hash{'restriction_site'}."nn".$rc_end
     );
     
 	return %tails;
@@ -175,14 +188,16 @@ sub design_primer{
 		my @primer_f=@{$array_of_positions[$i]};
 		my @primer_r=@{$array_of_positions[$i+1]};
 		
+		#START SET
 		if ($i==0){
 			my $fw=($primer_f[3]);
-			my $rv=($primer_r[3])+1;
+			my $rv=($primer_r[3])+2;
 			print $fw."\t";
 			print $rv."\n";
 			my @primers=primer_design($fw,$rv,\$mutagenised_seq,\%params);
 			append_primers(\@primers,\'start',\%$tails);
-		}
+		} 
+		#END SET
 		elsif ($i==($pairs-1)){
 			
 			my $fw=($primer_f[3])-1;
@@ -191,15 +206,16 @@ sub design_primer{
 			print $rv."\n";
 			my @primers=primer_design($fw,$rv,\$mutagenised_seq,\%params);
 			append_primers(\@primers,\'end',\%$tails);
-		}
+		} 
+		#MIDDLE SETS
 		elsif ($i>0 && $i<scalar(@$seqobj)){
 			my $fw=($primer_f[3])-1;
-			my $rv=($primer_r[3]+1);
+			my $rv=($primer_r[3]+2);
 			print $fw."\t";
 			print $rv."\n";
 			my @primers=primer_design($fw,$rv,\$mutagenised_seq,\%params);
 			append_primers(\@primers,\'internal',\%$tails); 
-		}
+		} 
 		else{
 			print "ERROR in the design primer subroutine \n";
 			} 
